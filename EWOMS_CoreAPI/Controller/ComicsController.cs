@@ -22,7 +22,14 @@ namespace EWOMS_CoreAPI.Controller
         public ComicsController(UserManager<MasterUser> userManager, IConfiguration configuration)
         {
             _userManager = userManager;
-            ComicsRootPath = configuration["ComicsRootPath"] ?? @"C:\Users\LENOVO\Desktop\Test\Final Full";
+            var configPath = configuration["ComicsRootPath"];
+            ComicsRootPath = (!string.IsNullOrEmpty(configPath) && Directory.Exists(configPath))
+                ? configPath
+                : Path.Combine(Directory.GetCurrentDirectory(), "Comics");
+            if (!Directory.Exists(ComicsRootPath))
+            {
+                try { Directory.CreateDirectory(ComicsRootPath); } catch { }
+            }
         }
 
         // GET: api/admin/comics/user-access-list
@@ -312,6 +319,92 @@ namespace EWOMS_CoreAPI.Controller
             }
             return fallbackPath;
         }
+        // POST: api/admin/comics/upload-folder
+        [HttpPost("upload-folder")]
+        [Authorize(Roles = "Admin,Manager")]
+        public async Task<IActionResult> UploadFolder([FromForm] string folderName, [FromForm] List<IFormFile> files)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(folderName))
+                    return BadRequest(new { Message = "Folder name is required." });
+
+                if (files == null || files.Count == 0)
+                    return BadRequest(new { Message = "No files uploaded." });
+
+                var safeFolderName = Path.GetFileName(folderName.Trim());
+                if (string.IsNullOrEmpty(safeFolderName))
+                    return BadRequest(new { Message = "Invalid folder name." });
+
+                var rootPath = GetSafeComicsRootPath();
+                var targetFolder = Path.Combine(rootPath, safeFolderName);
+
+                if (!Directory.Exists(targetFolder))
+                    Directory.CreateDirectory(targetFolder);
+
+                var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+                var savedCount = 0;
+                var skipped = new List<string>();
+
+                foreach (var file in files)
+                {
+                    if (file.Length == 0) continue;
+
+                    var safeFileName = Path.GetFileName(file.FileName);
+                    var ext = Path.GetExtension(safeFileName).ToLower();
+
+                    if (!allowedExts.Contains(ext))
+                    {
+                        skipped.Add(safeFileName);
+                        continue;
+                    }
+
+                    var filePath = Path.Combine(targetFolder, safeFileName);
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await file.CopyToAsync(stream);
+                    savedCount++;
+                }
+
+                return Ok(new
+                {
+                    Message = $"Uploaded {savedCount} image(s) to folder '{safeFolderName}'.",
+                    folderName = safeFolderName,
+                    savedCount,
+                    skipped
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Upload failed", Error = ex.Message });
+            }
+        }
+
+        // DELETE: api/admin/comics/delete-folder?folderName=xxx
+        [HttpDelete("delete-folder")]
+        [Authorize(Roles = "Admin,Manager")]
+        public IActionResult DeleteFolder([FromQuery] string folderName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(folderName))
+                    return BadRequest(new { Message = "Folder name is required." });
+
+                var safeFolderName = Path.GetFileName(folderName.Trim());
+                var rootPath = GetSafeComicsRootPath();
+                var targetFolder = Path.Combine(rootPath, safeFolderName);
+
+                if (!Directory.Exists(targetFolder))
+                    return NotFound(new { Message = "Folder not found." });
+
+                Directory.Delete(targetFolder, recursive: true);
+                return Ok(new { Message = $"Folder '{safeFolderName}' deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Delete failed", Error = ex.Message });
+            }
+        }
+
     }
 
     public class ComicAccessRequest
