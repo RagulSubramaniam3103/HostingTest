@@ -166,7 +166,7 @@ namespace EWOMS_CoreAPI.Controller
                 FilePath = $"/UserFiles/{userId}/{uniqueFileName}",
                 FileType = file.ContentType,
                 FileSize = file.Length,
-                UploadDate = DateTime.Now
+                UploadDate = DateTime.UtcNow
             };
 
             _context.UserPersonalFiles.Add(personalFile);
@@ -371,7 +371,7 @@ namespace EWOMS_CoreAPI.Controller
                 SenderId = senderId,
                 ReceiverId = dto.ReceiverId,
                 IsAccepted = false,
-                RequestDate = DateTime.Now
+                RequestDate = DateTime.UtcNow
             };
 
             _context.PartnerConnections.Add(request);
@@ -397,7 +397,7 @@ namespace EWOMS_CoreAPI.Controller
                 return Unauthorized("You are not authorized to accept this request");
 
             request.IsAccepted = true;
-            request.ConnectedAt = DateTime.Now;
+            request.ConnectedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -463,6 +463,8 @@ namespace EWOMS_CoreAPI.Controller
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
+            try
+            {
             var partners = await _context.PartnerConnections
                 .Where(x => (x.SenderId == userId || x.ReceiverId == userId) && x.IsAccepted)
                 .Select(x => new
@@ -499,6 +501,11 @@ namespace EWOMS_CoreAPI.Controller
             }));
 
             return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Failed to load partner connections", Error = ex.Message });
+            }
         }
 
         [HttpGet("GetPartnerConnections")]
@@ -563,7 +570,7 @@ namespace EWOMS_CoreAPI.Controller
                 FilePath = $"/PartnerPhotos/{connectionId}/{uniqueFileName}",
                 FileType = file.ContentType,
                 FileSize = file.Length,
-                SharedAt = DateTime.Now
+                SharedAt = DateTime.UtcNow
             };
 
             _context.PartnerSharedPhotos.Add(photo);
