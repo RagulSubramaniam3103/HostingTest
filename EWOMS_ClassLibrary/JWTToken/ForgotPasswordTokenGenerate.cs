@@ -1,6 +1,5 @@
-﻿using EWOMS_ExternalClassLibrary_DTO.UserData_DTO;
+using EWOMS_ExternalClassLibrary_DTO.UserData_DTO;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Identity.Client.Platforms.Features.DesktopOs.Kerberos;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;

@@ -24,10 +24,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 //DB Connection
 
-// DB Connection - Configured for PostgreSQL (Neon)
+// DB Connection - Configured for SQL Server (MonsterASP)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options => 
-    options.UseNpgsql(connectionString, b => b.MigrationsAssembly("EWOMS_ClassLibrary")));
+    options.UseSqlServer(connectionString, b => b.MigrationsAssembly("EWOMS_ClassLibrary")));
 
 //-----------//
 
@@ -237,7 +237,82 @@ using (var scope = app.Services.CreateScope())
     {
         await context.Database.MigrateAsync();
 
-        // Seed Roles
+        // Safeguard: Ensure ComicAccess and PrivateImageAccess exist on EWO_MasterUser table (SQL Server Syntax)
+        try {
+            await context.Database.ExecuteSqlRawAsync(@"
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[EWO_MasterUser]') AND name = 'ComicAccess')
+                BEGIN
+                    ALTER TABLE [dbo].[EWO_MasterUser]
+                    ADD [ComicAccess] bit NOT NULL CONSTRAINT [DF_EWO_MasterUser_ComicAccess] DEFAULT 0;
+                END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[EWO_MasterUser]') AND name = 'PrivateImageAccess')
+                BEGIN
+                    ALTER TABLE [dbo].[EWO_MasterUser]
+                    ADD [PrivateImageAccess] bit NOT NULL CONSTRAINT [DF_EWO_MasterUser_PrivateImageAccess] DEFAULT 0;
+                END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[EWO_MasterUser]') AND name = 'PrivateVideoAccess')
+                BEGIN
+                    ALTER TABLE [dbo].[EWO_MasterUser]
+                    ADD [PrivateVideoAccess] bit NOT NULL CONSTRAINT [DF_EWO_MasterUser_PrivateVideoAccess] DEFAULT 0;
+                END
+
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[EWO_MasterUser]') AND name = 'PrivateMenuPassword')
+                BEGIN
+                    ALTER TABLE [dbo].[EWO_MasterUser]
+                    ADD [PrivateMenuPassword] nvarchar(max) NULL;
+                END
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='EWO_MenuAccess' AND xtype='U')
+                BEGIN
+                    CREATE TABLE [dbo].[EWO_MenuAccess] (
+                        [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                        [UserId] NVARCHAR(450) NOT NULL,
+                        [MenuName] NVARCHAR(256) NOT NULL,
+                        [HasAccess] BIT NOT NULL DEFAULT 1,
+                        [IsPrivate] BIT NOT NULL DEFAULT 0
+                    );
+                END
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='EWO_UserNote' AND xtype='U')
+                BEGIN
+                    CREATE TABLE [dbo].[EWO_UserNote] (
+                        [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                        [UserId] NVARCHAR(450) NOT NULL,
+                        [Title] NVARCHAR(MAX) NULL,
+                        [Content] NVARCHAR(MAX) NULL,
+                        [Color] NVARCHAR(50) NOT NULL DEFAULT '#fef08a',
+                        [IsFlagged] BIT NOT NULL DEFAULT 0,
+                        [CreatedAt] DATETIME NOT NULL DEFAULT GETUTCDATE(),
+                        [UpdatedAt] DATETIME NOT NULL DEFAULT GETUTCDATE()
+                    );
+                END
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='EWO_ConstructionExpense' AND xtype='U')
+                BEGIN
+                    CREATE TABLE [dbo].[EWO_ConstructionExpense] (
+                        [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                        [ItemName] NVARCHAR(250) NOT NULL,
+                        [Amount] DECIMAL(18,2) NOT NULL,
+                        [SpentOn] DATETIME NOT NULL,
+                        [Category] NVARCHAR(100) NOT NULL,
+                        [Notes] NVARCHAR(MAX) NULL,
+                        [CreatedAt] DATETIME NOT NULL DEFAULT GETUTCDATE()
+                    );
+                END
+
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='EWO_ExpenseCategory' AND xtype='U')
+                BEGIN
+                    CREATE TABLE [dbo].[EWO_ExpenseCategory] (
+                        [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                        [Name] NVARCHAR(100) NOT NULL UNIQUE
+                    );
+                    INSERT INTO [dbo].[EWO_ExpenseCategory] ([Name]) VALUES ('Materials'), ('Labor'), ('Equipment'), ('Permits'), ('Other');
+                END
+            ");
+        } catch {}
+        
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         string[] roles = { "Admin", "User", "Manager" };
         foreach (var role in roles)
@@ -247,29 +322,68 @@ using (var scope = app.Services.CreateScope())
                 await roleManager.CreateAsync(new IdentityRole(role));
             }
         }
-
-        // Seed Expense Categories
-        if (!context.ExpenseCategories.Any())
-        {
-            context.ExpenseCategories.AddRange(
-                new ExpenseCategory { Name = "Materials" },
-                new ExpenseCategory { Name = "Labor" },
-                new ExpenseCategory { Name = "Equipment" },
-                new ExpenseCategory { Name = "Permits" },
-                new ExpenseCategory { Name = "Other" }
-            );
-            await context.SaveChangesAsync();
-        }
     }
     catch (Exception ex)
     {
+        // Log migration error but allow app to start for diagnostics
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred during database migration or seeding.");
+        logger.LogError(ex, "An error occurred during database migration.");
         
+        // ALSO write to a simple file in the root for easy access via WebFTP
         try {
             System.IO.File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "migration_error.txt"), 
                 ex.ToString() + "\n\nConnection String: " + connectionString);
         } catch {}
+    }
+
+    // Ensure Backup Tables Exist (SQL Server Syntax)
+    try {
+        string createBackupTablesSql = @"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='EWO_MasterUserBackup' AND xtype='U')
+            CREATE TABLE [EWO_MasterUserBackup] (
+                [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                [UserId] NVARCHAR(MAX) NOT NULL,
+                [UserName] NVARCHAR(MAX) NOT NULL,
+                [Email] NVARCHAR(MAX) NOT NULL,
+                [FullName] NVARCHAR(MAX) NULL,
+                [UserRole] NVARCHAR(MAX) NULL,
+                [CreatedUser] NVARCHAR(MAX) NULL,
+                [ProfileImage] VARBINARY(MAX) NULL,
+                [DeletedBy] NVARCHAR(MAX) NOT NULL,
+                [DeletedAt] NVARCHAR(MAX) NOT NULL,
+                [Reason] NVARCHAR(MAX) NULL
+            );
+
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='EWO_DeleteUserPost' AND xtype='U')
+            CREATE TABLE [EWO_DeleteUserPost] (
+                [SNo] INT IDENTITY(1,1) PRIMARY KEY,
+                [UId] INT NOT NULL,
+                [UserId] NVARCHAR(MAX) NOT NULL,
+                [ProfileImage] VARBINARY(MAX) NULL,
+                [Caption] NVARCHAR(MAX) NULL,
+                [CreatedAt] NVARCHAR(MAX) NOT NULL,
+                [DeletedBy] NVARCHAR(MAX) NOT NULL,
+                [DeletedAt] NVARCHAR(MAX) NOT NULL,
+                [Reason] NVARCHAR(MAX) NULL
+            );
+
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='EWO_AdminAuditLog' AND xtype='U')
+            CREATE TABLE [EWO_AdminAuditLog] (
+                [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                [AdminId] NVARCHAR(MAX) NOT NULL,
+                [AdminName] NVARCHAR(MAX) NOT NULL,
+                [Action] NVARCHAR(MAX) NOT NULL,
+                [TargetId] NVARCHAR(MAX) NULL,
+                [TargetName] NVARCHAR(MAX) NULL,
+                [Details] NVARCHAR(MAX) NULL,
+                [Timestamp] NVARCHAR(MAX) NOT NULL,
+                [IpAddress] NVARCHAR(MAX) NULL
+            );";
+    
+        await context.Database.ExecuteSqlRawAsync(createBackupTablesSql);
+    } catch (Exception backupEx) {
+        var logger2 = scope.ServiceProvider.GetService<ILogger<Program>>();
+        logger2?.LogWarning(backupEx, "Could not ensure backup tables — DB may not be ready yet. App will still start.");
     }
 }
 
