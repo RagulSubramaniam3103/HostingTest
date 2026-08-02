@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -18,7 +18,7 @@ namespace EWOMS_ClassLibrary.DataIntegration
 
         public string CreatedByUserId { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<ChatGroupMember> Members { get; set; }
     }

@@ -14,7 +14,7 @@ namespace EWOMS_ClassLibrary.DataIntegration.ChatMessenger
         public string SenderId { get; set; }
         public string ReceiverId { get; set; }
 
-        public DateTime RequestDate { get; set; } = DateTime.Now;
+        public DateTime RequestDate { get; set; } = DateTime.UtcNow;
 
         public FriendRequestStatus Status { get; set; }
     }

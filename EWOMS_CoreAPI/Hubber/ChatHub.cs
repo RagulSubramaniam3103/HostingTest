@@ -1,4 +1,4 @@
-using EWOMS_ClassLibrary.DataControlled;
+﻿using EWOMS_ClassLibrary.DataControlled;
 using EWOMS_ClassLibrary.DataIntegration;
 using EWOMS_ClassLibrary.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -42,7 +42,7 @@ namespace EWOMS_CoreAPI.Hubber
                     foreach (var msg in undelivered)
                     {
                         msg.IsDelivered = true;
-                        msg.DeliveredAt = DateTime.Now;
+                        msg.DeliveredAt = DateTime.UtcNow;
                     }
 
                     if (undelivered.Any())
@@ -117,7 +117,7 @@ namespace EWOMS_CoreAPI.Hubber
                     Video = video,
                     Document = document,
                     FileName = fileName,
-                    SentAt = DateTime.Now,
+                    SentAt = DateTime.UtcNow,
                     IsDelivered = false,
                     IsRead = false
                 };
@@ -130,7 +130,7 @@ namespace EWOMS_CoreAPI.Hubber
                 if (receiverConnections != null && receiverConnections.Any())
                 {
                     msg.IsDelivered = true;
-                    msg.DeliveredAt = DateTime.Now;
+                    msg.DeliveredAt = DateTime.UtcNow;
                     await _db.SaveChangesAsync();
 
                     await Clients.Clients(receiverConnections).SendAsync("ReceiveMessage", msg);
@@ -189,7 +189,7 @@ namespace EWOMS_CoreAPI.Hubber
                     Video = video,
                     Document = document,
                     FileName = fileName,
-                    SentAt = DateTime.Now,
+                    SentAt = DateTime.UtcNow,
                     IsDelivered = true, // Groups don't track delivery per user the same way
                     IsRead = false
                 };
@@ -221,7 +221,7 @@ namespace EWOMS_CoreAPI.Hubber
                 foreach (var msg in unreadMessages)
                 {
                     msg.IsRead = true;
-                    msg.ReadAt = DateTime.Now;
+                    msg.ReadAt = DateTime.UtcNow;
                 }
                 await _db.SaveChangesAsync();
 

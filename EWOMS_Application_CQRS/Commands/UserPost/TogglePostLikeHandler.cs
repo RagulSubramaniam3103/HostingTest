@@ -1,4 +1,4 @@
-using EWOMS_ClassLibrary.DataControlled;
+﻿using EWOMS_ClassLibrary.DataControlled;
 using EWOMS_ClassLibrary.DataIntegration;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -27,7 +27,7 @@ namespace EWOMS_Application_CQRS.Commands.UserPost
                 {
                     PostId = postId,
                     UserId = userId,
-                    LikedAt = DateTime.Now
+                    LikedAt = DateTime.UtcNow
                 };
                 await _context.PostLikes.AddAsync(newLike);
                 isLiked = true;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -16,7 +16,7 @@ namespace EWOMS_ClassLibrary.DataIntegration.ChatMessenger
         [Required]
         public string FollowingId { get; set; } // The person BEING FOLLOWED
 
-        public DateTime FollowedAt { get; set; } = DateTime.Now;
+        public DateTime FollowedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties (optional but helpful)
         [ForeignKey("FollowerId")]

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -22,7 +22,7 @@ namespace EWOMS_ClassLibrary.DataIntegration
         
         public long FileSize { get; set; }
         
-        public DateTime UploadDate { get; set; } = DateTime.Now;
+        public DateTime UploadDate { get; set; } = DateTime.UtcNow;
         
         [ForeignKey("UserId")]
         public virtual MasterUser User { get; set; }

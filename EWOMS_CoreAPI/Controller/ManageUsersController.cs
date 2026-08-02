@@ -1,4 +1,4 @@
-using EWOMS_Application_CQRS.Commands;
+﻿using EWOMS_Application_CQRS.Commands;
 using EWOMS_Application_CQRS.Commands.UpdateUser;
 using EWOMS_Application_CQRS.Commands.UserPost;
 using EWOMS_Application_CQRS.Commands.UserDeletion;
@@ -916,7 +916,7 @@ namespace EWOMS_CoreAPI.Controller
                     m.Document,
                     m.FileName,
                     m.SentAt,
-                    DeletedAt = DateTime.Now, // We didn't add a DeletedAt column, using current time for UI
+                    DeletedAt = DateTime.UtcNow, // We didn't add a DeletedAt column, using current time for UI
                     DeletedBy = m.DeletedBy,
                     DeletedByName = _dbContext.Users.Where(u => u.Id == m.DeletedBy).Select(u => u.FullName).FirstOrDefault()
                 })

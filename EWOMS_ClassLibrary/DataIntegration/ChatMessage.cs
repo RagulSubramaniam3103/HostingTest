@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -15,27 +15,27 @@ namespace EWOMS_ClassLibrary.DataIntegration
 
         public string Message { get; set; }
 
-        public DateTime SentAt { get; set; } = DateTime.Now;
+        public DateTime SentAt { get; set; } = DateTime.UtcNow;
 
-        // 🟡 DELIVERY STATUS
+        // ðŸŸ¡ DELIVERY STATUS
         public bool IsDelivered { get; set; } = false;
         public DateTime? DeliveredAt { get; set; }
 
-        // 🔵 READ STATUS
+        // ðŸ”µ READ STATUS
         public bool IsRead { get; set; } = false;
         public DateTime? ReadAt { get; set; }
 
-        // 🖼️ IMAGE SUPPORT
+        // ðŸ–¼ï¸ IMAGE SUPPORT
         public string? Image { get; set; }
 
-        // 🎥 VIDEO SUPPORT
+        // ðŸŽ¥ VIDEO SUPPORT
         public string? Video { get; set; }
 
-        // 📄 DOCUMENT SUPPORT
+        // ðŸ“„ DOCUMENT SUPPORT
         public string? Document { get; set; }
         public string? FileName { get; set; }
         
-        // 🗑️ SOFT DELETE SUPPORT
+        // ðŸ—‘ï¸ SOFT DELETE SUPPORT
         public bool IsDeleted { get; set; } = false;
         public string? DeletedBy { get; set; }
     }

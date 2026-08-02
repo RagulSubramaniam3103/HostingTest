@@ -1,4 +1,4 @@
-using EWOMS_ClassLibrary.DataControlled;
+﻿using EWOMS_ClassLibrary.DataControlled;
 using EWOMS_ClassLibrary.DataIntegration;
 using EWOMS_ClassLibrary.DataIntegration.ChatMessenger;
 using EWOMS_ClassLibrary.Services;
@@ -132,7 +132,7 @@ namespace EWOMS_CoreAPI.Controller
             if (exists)
                 return Ok(new { message = "Request already exists or friend already added" });
 
-            // ✅ CASE 1: PUBLIC PROFILE → AUTO ACCEPT
+            // âœ… CASE 1: PUBLIC PROFILE â†’ AUTO ACCEPT
             if (receiver.IsPrivate == false)
             {
                 var autoFriend = new FriendRequests
@@ -140,12 +140,12 @@ namespace EWOMS_CoreAPI.Controller
                     SenderId = senderId ?? string.Empty,
                     ReceiverId = dto.ReceiverId ?? string.Empty,
                     Status = FriendRequestStatus.Accepted,
-                    RequestDate = DateTime.Now
+                    RequestDate = DateTime.UtcNow
                 };
 
                 _connection.EWOMS_FriendRequests.Add(autoFriend);
                 
-                // ✅ SYNC: Auto-Follow each other
+                // âœ… SYNC: Auto-Follow each other
                 SyncMutualFollow(senderId!, dto.ReceiverId!);
                 
                 _connection.SaveChanges();
@@ -153,13 +153,13 @@ namespace EWOMS_CoreAPI.Controller
                 return Ok(new { message = "Successfully added as friend (Public Account)" });
             }
 
-            // 🔒 CASE 2: PRIVATE PROFILE → NEED APPROVAL
+            // ðŸ”’ CASE 2: PRIVATE PROFILE â†’ NEED APPROVAL
             var request = new FriendRequests
             {
                 SenderId = senderId ?? string.Empty,
                 ReceiverId = dto.ReceiverId ?? string.Empty,
                 Status = FriendRequestStatus.Pending,
-                RequestDate = DateTime.Now
+                RequestDate = DateTime.UtcNow
             };
 
             _connection.EWOMS_FriendRequests.Add(request);
@@ -186,7 +186,7 @@ namespace EWOMS_CoreAPI.Controller
 
             request.Status = FriendRequestStatus.Accepted;
 
-            // ✅ SYNC: Auto-Follow each other
+            // âœ… SYNC: Auto-Follow each other
             SyncMutualFollow(request.SenderId!, request.ReceiverId!);
 
             _connection.SaveChanges();
@@ -222,12 +222,12 @@ namespace EWOMS_CoreAPI.Controller
                 // User A follows B
                 if (!_connection.EWOMS_Followers.Any(f => f.FollowerId == userA && f.FollowingId == userB))
                 {
-                    _connection.EWOMS_Followers.Add(new UserFollower { FollowerId = userA, FollowingId = userB, FollowedAt = DateTime.Now });
+                    _connection.EWOMS_Followers.Add(new UserFollower { FollowerId = userA, FollowingId = userB, FollowedAt = DateTime.UtcNow });
                 }
                 // User B follows A
                 if (!_connection.EWOMS_Followers.Any(f => f.FollowerId == userB && f.FollowingId == userA))
                 {
-                    _connection.EWOMS_Followers.Add(new UserFollower { FollowerId = userB, FollowingId = userA, FollowedAt = DateTime.Now });
+                    _connection.EWOMS_Followers.Add(new UserFollower { FollowerId = userB, FollowingId = userA, FollowedAt = DateTime.UtcNow });
                 }
             } catch(Exception ex) {
                 Console.WriteLine($"Social Sync Error: {ex.Message}");
@@ -340,15 +340,15 @@ namespace EWOMS_CoreAPI.Controller
                         }
                         else if (!string.IsNullOrEmpty(lastMsg.Image))
                         {
-                            lastMsgText = "📷 Image";
+                            lastMsgText = "ðŸ“· Image";
                         }
                         else if (!string.IsNullOrEmpty(lastMsg.Document))
                         {
-                            lastMsgText = "📄 Document";
+                            lastMsgText = "ðŸ“„ Document";
                         }
                         else if (!string.IsNullOrEmpty(lastMsg.Video))
                         {
-                            lastMsgText = "🎥 Video";
+                            lastMsgText = "ðŸŽ¥ Video";
                         }
                     }
 
@@ -451,7 +451,7 @@ namespace EWOMS_CoreAPI.Controller
                 Video = dto.Video,
                 Document = dto.Document,
                 FileName = dto.FileName,
-                SentAt = DateTime.Now,
+                SentAt = DateTime.UtcNow,
                 IsRead = false,
                 IsDelivered = _online.IsOnline(dto.ReceiverId!)
             };
@@ -459,12 +459,12 @@ namespace EWOMS_CoreAPI.Controller
             _connection.EWOMS_ChatMessages.Add(msg);
             _connection.SaveChanges();
 
-            // ✅ Broadcast to receiver via SignalR
+            // âœ… Broadcast to receiver via SignalR
             var receiverConnections = _online.GetConnections(dto.ReceiverId!);
             if (receiverConnections != null && receiverConnections.Any())
                 await _hubContext.Clients.Clients(receiverConnections).SendAsync("ReceiveMessage", msg);
 
-            // ✅ Echo back to sender (updates sender's own UI instantly)
+            // âœ… Echo back to sender (updates sender's own UI instantly)
             var senderConnections = _online.GetConnections(senderId!);
             if (senderConnections != null && senderConnections.Any())
                 await _hubContext.Clients.Clients(senderConnections).SendAsync("ReceiveMessage", msg);
@@ -492,7 +492,7 @@ namespace EWOMS_CoreAPI.Controller
             foreach (var msg in unread)
             {
                 msg.IsRead = true;
-                msg.ReadAt = DateTime.Now;
+                msg.ReadAt = DateTime.UtcNow;
             }
 
             _connection.SaveChanges();
@@ -507,7 +507,7 @@ namespace EWOMS_CoreAPI.Controller
             {
                 status = "Healthy",
                 serviceRegistered = _online != null,
-                timestamp = DateTime.Now
+                timestamp = DateTime.UtcNow
             });
         }
 
@@ -617,7 +617,7 @@ namespace EWOMS_CoreAPI.Controller
                 {
                     FollowerId = currentUserId,
                     FollowingId = targetUserId,
-                    FollowedAt = DateTime.Now
+                    FollowedAt = DateTime.UtcNow
                 };
                 _connection.EWOMS_Followers.Add(follow);
                 _connection.SaveChanges();
@@ -702,7 +702,7 @@ namespace EWOMS_CoreAPI.Controller
                 Description = dto.Description,
                 ProfileImage = dto.ProfileImage,
                 CreatedByUserId = userId,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
             _connection.ChatGroups.Add(group);
             _connection.SaveChanges();
@@ -713,7 +713,7 @@ namespace EWOMS_CoreAPI.Controller
                 GroupId = group.Id,
                 UserId = userId,
                 IsAdmin = true,
-                JoinedAt = DateTime.Now
+                JoinedAt = DateTime.UtcNow
             });
 
             // Add selected members
@@ -726,7 +726,7 @@ namespace EWOMS_CoreAPI.Controller
                         GroupId = group.Id,
                         UserId = memberId,
                         IsAdmin = false,
-                        JoinedAt = DateTime.Now
+                        JoinedAt = DateTime.UtcNow
                     });
                 }
             }
@@ -758,9 +758,9 @@ namespace EWOMS_CoreAPI.Controller
                         .Where(msg => msg.GroupId == m.GroupId)
                         .OrderByDescending(msg => msg.SentAt)
                         .Select(msg => !string.IsNullOrEmpty(msg.Message) ? msg.Message :
-                                      !string.IsNullOrEmpty(msg.Image) ? "📷 Image" :
-                                      !string.IsNullOrEmpty(msg.Document) ? "📄 Document" :
-                                      !string.IsNullOrEmpty(msg.Video) ? "🎥 Video" : "")
+                                      !string.IsNullOrEmpty(msg.Image) ? "ðŸ“· Image" :
+                                      !string.IsNullOrEmpty(msg.Document) ? "ðŸ“„ Document" :
+                                      !string.IsNullOrEmpty(msg.Video) ? "ðŸŽ¥ Video" : "")
                         .FirstOrDefault(),
                     LastMessageDate = _connection.EWOMS_ChatMessages
                         .Where(msg => msg.GroupId == m.GroupId)
@@ -850,7 +850,7 @@ namespace EWOMS_CoreAPI.Controller
                 GroupId = groupId,
                 UserId = memberId,
                 IsAdmin = false,
-                JoinedAt = DateTime.Now
+                JoinedAt = DateTime.UtcNow
             });
             _connection.SaveChanges();
 
@@ -890,7 +890,7 @@ namespace EWOMS_CoreAPI.Controller
                 Video = dto.Video,
                 Document = dto.Document,
                 FileName = dto.FileName,
-                SentAt = DateTime.Now,
+                SentAt = DateTime.UtcNow,
                 IsDelivered = true,
                 IsRead = false
             };
@@ -898,7 +898,7 @@ namespace EWOMS_CoreAPI.Controller
             _connection.EWOMS_ChatMessages.Add(msg);
             _connection.SaveChanges();
 
-            // ✅ Broadcast to all group members via SignalR instantly
+            // âœ… Broadcast to all group members via SignalR instantly
             await _hubContext.Clients.Group(dto.GroupId.ToString()).SendAsync("ReceiveGroupMessage", msg);
 
             return Ok(msg);
@@ -921,7 +921,7 @@ namespace EWOMS_CoreAPI.Controller
 
             _connection.SaveChanges();
 
-            // ✅ Broadcast update to all group members via SignalR instantly
+            // âœ… Broadcast update to all group members via SignalR instantly
             await _hubContext.Clients.Group(dto.GroupId.ToString()).SendAsync("GroupUpdated", new {
                 GroupId = group.Id,
                 Name = group.Name,

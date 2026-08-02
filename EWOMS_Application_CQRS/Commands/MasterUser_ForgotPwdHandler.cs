@@ -29,7 +29,7 @@ namespace EWOMS_Application_CQRS.Commands
                 {
                     Status = "Error",
                     Message = "Password and Confirm Password do not match.",
-                    Timestamp = DateTime.Now,
+                    Timestamp = DateTime.UtcNow,
                 };
             var existinguser = await _userManager.FindByEmailAsync(ForgotPwdCommand.Email);
             if (existinguser == null)
@@ -37,7 +37,7 @@ namespace EWOMS_Application_CQRS.Commands
                 {
                     Status = "Error",
                     Message = "Email does not exist.",
-                    Timestamp = DateTime.Now,
+                    Timestamp = DateTime.UtcNow,
                 };
             var oldpasswordcheck = await _userManager.CheckPasswordAsync(existinguser, ForgotPwdCommand.OldPassword);
             if (!oldpasswordcheck)
@@ -45,7 +45,7 @@ namespace EWOMS_Application_CQRS.Commands
                 {
                     Status = "Error",
                     Message = "Invalid Old Password.",
-                    Timestamp = DateTime.Now,
+                    Timestamp = DateTime.UtcNow,
                 };
 
             var getlastpassword = await _dbContext.Master_UserPasswordLogs.Where(x => x.UserId == existinguser.Id).OrderByDescending(x => x.CreatedDate).Take(5).ToListAsync();
@@ -59,7 +59,7 @@ namespace EWOMS_Application_CQRS.Commands
                         {
                             Status = "Error",
                             Message = "You cannot reuse your previous Password.",
-                            Timestamp = DateTime.Now,
+                            Timestamp = DateTime.UtcNow,
                         };
                 }
 
@@ -84,14 +84,14 @@ namespace EWOMS_Application_CQRS.Commands
                 {
                     Status = "Success",
                     Message = "Password reset successfully.",
-                    Timestamp = DateTime.Now,
+                    Timestamp = DateTime.UtcNow,
                 };
             else
                 return new
                 {
                     Status = "Error",
                     Message = "Error resetting password.",
-                    Timestamp = DateTime.Now,
+                    Timestamp = DateTime.UtcNow,
                 };
         }
     }

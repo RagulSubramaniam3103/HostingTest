@@ -1,4 +1,4 @@
-using EWOMS_ClassLibrary.DataControlled;
+﻿using EWOMS_ClassLibrary.DataControlled;
 using EWOMS_ClassLibrary.DataIntegration;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -32,7 +32,7 @@ namespace EWOMS_Application_CQRS.Commands.UserPost
                 {
                     PostId = postId,
                     UserId = userId,
-                    SavedAt = DateTime.Now
+                    SavedAt = DateTime.UtcNow
                 };
                 await _context.SavedPosts.AddAsync(newSave);
                 isSaved = true;

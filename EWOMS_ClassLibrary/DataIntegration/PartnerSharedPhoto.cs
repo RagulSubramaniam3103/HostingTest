@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -31,6 +31,6 @@ namespace EWOMS_ClassLibrary.DataIntegration
 
         public long FileSize { get; set; }
 
-        public DateTime SharedAt { get; set; } = DateTime.Now;
+        public DateTime SharedAt { get; set; } = DateTime.UtcNow;
     }
 }

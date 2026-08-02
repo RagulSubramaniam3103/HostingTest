@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -17,7 +17,7 @@ namespace EWOMS_ClassLibrary.DataIntegration
 
         public bool IsAccepted { get; set; } = false;
 
-        public DateTime RequestDate { get; set; } = DateTime.Now;
+        public DateTime RequestDate { get; set; } = DateTime.UtcNow;
 
         public DateTime? ConnectedAt { get; set; }
     }

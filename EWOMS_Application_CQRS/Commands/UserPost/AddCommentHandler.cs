@@ -1,4 +1,4 @@
-using EWOMS_ClassLibrary.DataControlled;
+﻿using EWOMS_ClassLibrary.DataControlled;
 using EWOMS_ClassLibrary.DataIntegration;
 using System;
 using System.Threading.Tasks;
@@ -23,7 +23,7 @@ namespace EWOMS_Application_CQRS.Commands.UserPost
                 PostId = postId,
                 UserId = userId,
                 Content = content,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             try
