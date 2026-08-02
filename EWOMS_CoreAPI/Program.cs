@@ -102,6 +102,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexus API", Version = "v1" });
+    options.CustomSchemaIds(type => type.FullName);
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
