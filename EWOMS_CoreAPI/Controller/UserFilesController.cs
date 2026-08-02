@@ -434,18 +434,18 @@ namespace EWOMS_CoreAPI.Controller
             var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
             if (string.IsNullOrEmpty(senderId)) return Unauthorized();
 
-            if (senderId == dto.ReceiverId)
+            if (string.Equals(senderId, dto.ReceiverId, StringComparison.OrdinalIgnoreCase))
                 return BadRequest("You cannot send a partner request to yourself");
 
             // check receiver user
-            var receiverExists = await _context.Users.AnyAsync(x => x.Id == dto.ReceiverId);
+            var receiverExists = await _context.Users.AnyAsync(x => x.Id.ToLower() == dto.ReceiverId.ToLower());
             if (!receiverExists)
                 return NotFound("User not found");
 
             // already exists check
             var exists = await _context.PartnerConnections.AnyAsync(x =>
-                (x.SenderId == senderId && x.ReceiverId == dto.ReceiverId) ||
-                (x.SenderId == dto.ReceiverId && x.ReceiverId == senderId));
+                (x.SenderId.ToLower() == senderId.ToLower() && x.ReceiverId.ToLower() == dto.ReceiverId.ToLower()) ||
+                (x.SenderId.ToLower() == dto.ReceiverId.ToLower() && x.ReceiverId.ToLower() == senderId.ToLower()));
 
             if (exists)
                 return Ok(new { message = "Request already exists or partner already connected" });
@@ -477,7 +477,7 @@ namespace EWOMS_CoreAPI.Controller
                 return NotFound("Request not found");
 
             // Security Check: Only the receiver can accept the request
-            if (request.ReceiverId != userId)
+            if (!string.Equals(request.ReceiverId, userId, StringComparison.OrdinalIgnoreCase))
                 return Unauthorized("You are not authorized to accept this request");
 
             request.IsAccepted = true;
@@ -501,7 +501,8 @@ namespace EWOMS_CoreAPI.Controller
                 return NotFound("Request not found");
 
             // Security Check: Sender or Receiver can decline or remove partner
-            if (request.ReceiverId != userId && request.SenderId != userId)
+            if (!string.Equals(request.ReceiverId, userId, StringComparison.OrdinalIgnoreCase) && 
+                !string.Equals(request.SenderId, userId, StringComparison.OrdinalIgnoreCase))
                 return Unauthorized("You are not authorized to manage this connection");
 
             _context.PartnerConnections.Remove(request);
@@ -517,7 +518,7 @@ namespace EWOMS_CoreAPI.Controller
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var requests = await _context.PartnerConnections
-                .Where(x => x.ReceiverId == userId && !x.IsAccepted)
+                .Where(x => x.ReceiverId.ToLower() == userId.ToLower() && !x.IsAccepted)
                 .Select(x => new
                 {
                     x.Id,
@@ -550,11 +551,11 @@ namespace EWOMS_CoreAPI.Controller
             try
             {
                 var partners = await _context.PartnerConnections
-                    .Where(x => (x.SenderId == userId || x.ReceiverId == userId) && x.IsAccepted)
+                    .Where(x => (x.SenderId.ToLower() == userId.ToLower() || x.ReceiverId.ToLower() == userId.ToLower()) && x.IsAccepted)
                     .Select(x => new
                     {
                         ConnectionId = x.Id,
-                        PartnerId = x.SenderId == userId ? x.ReceiverId : x.SenderId,
+                        PartnerId = x.SenderId.ToLower() == userId.ToLower() ? x.ReceiverId : x.SenderId,
                         ConnectedAt = x.ConnectedAt
                     })
                     .ToListAsync();
@@ -603,7 +604,7 @@ namespace EWOMS_CoreAPI.Controller
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
             var connections = await _context.PartnerConnections
-                .Where(x => (x.SenderId == userId || x.ReceiverId == userId) && x.IsAccepted)
+                .Where(x => (x.SenderId.ToLower() == userId.ToLower() || x.ReceiverId.ToLower() == userId.ToLower()) && x.IsAccepted)
                 .Select(x => new
                 {
                     x.Id,
@@ -625,8 +626,7 @@ namespace EWOMS_CoreAPI.Controller
         [HttpPost("UploadPartnerPhoto/{connectionId}")]
         public async Task<IActionResult> UploadPartnerPhoto(int connectionId, IFormFile file)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("No file uploaded.");
+            if (file == null || file.Length == 0) return BadRequest("No file uploaded");
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
             if (string.IsNullOrEmpty(userId)) return Unauthorized();
@@ -634,7 +634,7 @@ namespace EWOMS_CoreAPI.Controller
             // Verify connection exists, is accepted, and the requester is one of the partners
             var connection = await _context.PartnerConnections
                 .FirstOrDefaultAsync(x => x.Id == connectionId && x.IsAccepted &&
-                                          (x.SenderId == userId || x.ReceiverId == userId));
+                                          (x.SenderId.ToLower() == userId.ToLower() || x.ReceiverId.ToLower() == userId.ToLower()));
             if (connection == null)
                 return Forbid();
 
@@ -680,7 +680,7 @@ namespace EWOMS_CoreAPI.Controller
             // Verify the requesting user is part of this accepted connection
             var connection = await _context.PartnerConnections
                 .FirstOrDefaultAsync(x => x.Id == connectionId && x.IsAccepted &&
-                                          (x.SenderId == userId || x.ReceiverId == userId));
+                                          (x.SenderId.ToLower() == userId.ToLower() || x.ReceiverId.ToLower() == userId.ToLower()));
             if (connection == null)
                 return Forbid();
 
@@ -718,7 +718,7 @@ namespace EWOMS_CoreAPI.Controller
 
             var photo = await _context.PartnerSharedPhotos.FindAsync(photoId);
             if (photo == null) return NotFound();
-            if (photo.UploaderId != userId) return Forbid();
+            if (!string.Equals(photo.UploaderId, userId, StringComparison.OrdinalIgnoreCase)) return Forbid();
 
             var rootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
             var physicalPath = Path.Combine(rootPath, photo.FilePath.TrimStart('/').Replace("/", "\\"));
