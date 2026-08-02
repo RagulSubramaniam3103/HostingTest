@@ -1,0 +1,9 @@
+System.Data.SqlTypes.SqlNullValueException: Data is Null. This method or property cannot be called on Null values.
+   at Microsoft.Data.SqlClient.SqlDataReader.GetFieldValueFromSqlBufferInternal[T](SqlBuffer data, _SqlMetaData metaData, Boolean isAsync)
+   at Microsoft.Data.SqlClient.SqlDataReader.GetFieldValueInternal[T](Int32 i, Boolean isAsync)
+   at Microsoft.Data.SqlClient.SqlDataReader.GetFieldValue[T](Int32 i)
+   at lambda_method521(Closure, QueryContext, DbDataReader, ResultContext, SingleQueryResultCoordinator)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at EWOMS_Application_CQRS.Commands.UserPost.MasterUserPostGet_Handler.Handle(String userId, String currentUserId) in C:\Users\LENOVO\Desktop\Core\Web API\EWOMS_Application\EWOMS_LOCAL_PROJECT\Backend\EWOMS_Application_CQRS\Commands\UserPost\MasterUserPostGet_Handler.cs:line 82

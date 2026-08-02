@@ -1,0 +1,45 @@
+## Ignore Visual Studio temporary files, build results, and user settings
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Re]leases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Log]/
+
+# Visual Studio 2015/2017 cache/options directory
+.vs/
+# Uncomment if needed
+# Minified files
+# *.min.js
+# *.min.css
+
+# Tooling
+_ReSharper*/
+*.[Re]Sharper
+*.DotSettings.user
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+api_log.txt
+
+# User uploaded media
+EWOMS_CoreAPI/wwwroot/UserFiles/
+
