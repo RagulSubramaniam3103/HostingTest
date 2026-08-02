@@ -26,7 +26,14 @@ namespace EWOMS_CoreAPI.Controller
         {
             _userManager = userManager;
             _dbContext = dbContext;
-            VideosRootPath = configuration["VideosRootPath"] ?? @"C:\Users\LENOVO\Desktop\Test\Videos";
+            var configPath = configuration["VideosRootPath"];
+            VideosRootPath = (!string.IsNullOrEmpty(configPath) && Directory.Exists(configPath))
+                ? configPath
+                : Path.Combine(Directory.GetCurrentDirectory(), "PrivateVideos");
+            if (!Directory.Exists(VideosRootPath))
+            {
+                try { Directory.CreateDirectory(VideosRootPath); } catch { }
+            }
             BlurStatesFilePath = Path.Combine(VideosRootPath, "video_blur_states.json");
             EnsurePrivateVideoAccessColumnExists();
         }

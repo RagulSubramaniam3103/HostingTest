@@ -26,7 +26,14 @@ namespace EWOMS_CoreAPI.Controller
         {
             _userManager = userManager;
             _dbContext = dbContext;
-            ImagesRootPath = configuration["ImagesRootPath"] ?? @"C:\Users\LENOVO\Desktop\Test\Images";
+            var configPath = configuration["ImagesRootPath"];
+            ImagesRootPath = (!string.IsNullOrEmpty(configPath) && Directory.Exists(configPath))
+                ? configPath
+                : Path.Combine(Directory.GetCurrentDirectory(), "PrivateImages");
+            if (!Directory.Exists(ImagesRootPath))
+            {
+                try { Directory.CreateDirectory(ImagesRootPath); } catch { }
+            }
             BlurStatesFilePath = Path.Combine(ImagesRootPath, "blur_states.json");
             EnsurePrivateImageAccessColumnExists();
         }
@@ -182,7 +189,8 @@ namespace EWOMS_CoreAPI.Controller
 
                 if (!Directory.Exists(ImagesRootPath))
                 {
-                    return NotFound(new { Message = $"Images root directory not found at: {ImagesRootPath}" });
+                    try { Directory.CreateDirectory(ImagesRootPath); } catch { }
+                    return Ok(new List<object>());
                 }
 
                 var files = Directory.GetFiles(ImagesRootPath)
