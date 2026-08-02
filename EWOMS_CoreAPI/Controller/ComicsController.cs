@@ -113,12 +113,8 @@ namespace EWOMS_CoreAPI.Controller
                     return Forbid();
                 }
 
-                if (!Directory.Exists(ComicsRootPath))
-                {
-                    return NotFound(new { Message = $"Comics root directory not found at: {ComicsRootPath}" });
-                }
-
-                var directories = Directory.GetDirectories(ComicsRootPath);
+                var safePath = GetSafeComicsRootPath();
+                var directories = Directory.GetDirectories(safePath);
                 var folderNames = directories.Select(d => Path.GetFileName(d)).OrderBy(name => name).ToList();
 
                 return Ok(folderNames);
@@ -147,7 +143,7 @@ namespace EWOMS_CoreAPI.Controller
 
                 // Security: Avoid directory traversal by taking only the file name
                 var safeFolderName = Path.GetFileName(folderName);
-                var folderPath = Path.Combine(ComicsRootPath, safeFolderName);
+                var folderPath = Path.Combine(GetSafeComicsRootPath(), safeFolderName);
 
                 if (!Directory.Exists(folderPath))
                 {
@@ -191,7 +187,7 @@ namespace EWOMS_CoreAPI.Controller
                 }
 
                 var safeFolderName = Path.GetFileName(folderName);
-                var folderPath = Path.Combine(ComicsRootPath, safeFolderName);
+                var folderPath = Path.Combine(GetSafeComicsRootPath(), safeFolderName);
 
                 if (!Directory.Exists(folderPath))
                 {
@@ -255,7 +251,7 @@ namespace EWOMS_CoreAPI.Controller
 
                 var safeFolderName = Path.GetFileName(folderName);
                 var safeFileName = Path.GetFileName(fileName);
-                var filePath = Path.Combine(ComicsRootPath, safeFolderName, safeFileName);
+                var filePath = Path.Combine(GetSafeComicsRootPath(), safeFolderName, safeFileName);
 
                 if (!System.IO.File.Exists(filePath))
                 {
@@ -297,6 +293,24 @@ namespace EWOMS_CoreAPI.Controller
 
             var user = await _userManager.FindByIdAsync(userId);
             return user?.ComicAccess == true;
+        }
+
+        private string GetSafeComicsRootPath()
+        {
+            if (Directory.Exists(ComicsRootPath))
+            {
+                return ComicsRootPath;
+            }
+            var fallbackPath = Path.Combine(Directory.GetCurrentDirectory(), "Comics");
+            if (!Directory.Exists(fallbackPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(fallbackPath);
+                }
+                catch {}
+            }
+            return fallbackPath;
         }
     }
 

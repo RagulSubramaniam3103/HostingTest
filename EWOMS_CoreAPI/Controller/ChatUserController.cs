@@ -536,7 +536,7 @@ namespace EWOMS_CoreAPI.Controller
         public IActionResult GetAboutInfo(string userId)
         {
             // Try to find in MasterAdmin
-            var admin = _connection.Set<MasterAdmin>().FirstOrDefault(u => (u.UserId.ToString()) == userId);
+            var admin = _connection.Set<MasterAdmin>().FirstOrDefault(u => u.UserId == userId);
             if (admin != null)
             {
                 return Ok(new {
@@ -548,7 +548,7 @@ namespace EWOMS_CoreAPI.Controller
             }
 
             // Try to find in MasterManager
-            var manager = _connection.Set<MasterManager>().FirstOrDefault(u => u.UserId.ToString() == userId);
+            var manager = _connection.Set<MasterManager>().FirstOrDefault(u => u.UserId == userId);
             if (manager != null)
             {
                 return Ok(new {
@@ -560,7 +560,7 @@ namespace EWOMS_CoreAPI.Controller
             }
 
             // Try to find in MasterUserDetails
-            var userDetail = _connection.Set<MasterUserDetails>().FirstOrDefault(u => u.UserId.ToString() == userId);
+            var userDetail = _connection.Set<MasterUserDetails>().FirstOrDefault(u => u.UserId == userId);
             if (userDetail != null)
             {
                 return Ok(new {
