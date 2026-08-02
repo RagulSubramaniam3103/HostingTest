@@ -194,17 +194,9 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddCors(options => {
-    // Development CORS policy: allow any localhost origin (any port) and any method/header.
-    // NOTE: Restrictive origins should be used in production.
+    // CORS policy: allow any origin dynamically (needed for Vercel deployment)
     options.AddPolicy("AllowLocalhost", policy => {
-        policy.SetIsOriginAllowed(origin => {
-            try {
-                var uri = new Uri(origin);
-                return uri.Host == "localhost";
-            } catch {
-                return false;
-            }
-        })
+        policy.SetIsOriginAllowed(origin => true)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials(); // Required for JWT auth header
