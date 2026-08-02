@@ -25,4 +25,10 @@
     <ProjectReference Include="..\EWOMS_ExternalClassLibrary_DTO\EWOMS_ExternalClassLibrary_DTO.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Comics\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
