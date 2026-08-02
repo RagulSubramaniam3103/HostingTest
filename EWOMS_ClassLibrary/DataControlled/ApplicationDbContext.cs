@@ -125,6 +125,35 @@ namespace EWOMS_ClassLibrary.DataControlled
             builder.Entity<UserNote>().ToTable("EWO_UserNote");
             builder.Entity<ConstructionExpense>().ToTable("EWO_ConstructionExpense");
             builder.Entity<ExpenseCategory>().ToTable("EWO_ExpenseCategory");
+
+            // Global DateTime UTC conversion for PostgreSQL compatibility
+            var dateTimeConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+                v => v.ToUniversalTime(),
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            var nullableDateTimeConverter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime?, DateTime?>(
+                v => v.HasValue ? v.Value.ToUniversalTime() : (DateTime?)null,
+                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : (DateTime?)null);
+
+            foreach (var entityType in builder.Model.GetEntityTypes())
+            {
+                if (entityType.FindPrimaryKey() == null)
+                {
+                    continue;
+                }
+
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime))
+                    {
+                        property.SetValueConverter(dateTimeConverter);
+                    }
+                    else if (property.ClrType == typeof(DateTime?))
+                    {
+                        property.SetValueConverter(nullableDateTimeConverter);
+                    }
+                }
+            }
         }
 
         public DbSet<FriendRequests> EWOMS_FriendRequests { get; set; }
